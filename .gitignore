@@ -1,0 +1,52 @@
+# =====================
+# Node.js
+# =====================
+my-crm/node_modules/
+my-crm/.vite/
+my-crm/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =====================
+# Python
+# =====================
+server/venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# =====================
+# Environment & Secrets
+# =====================
+.env
+.env.local
+.env.*.local
+
+# =====================
+# macOS
+# =====================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# =====================
+# Editor & IDE
+# =====================
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =====================
+# OS Generated Files
+# =====================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
