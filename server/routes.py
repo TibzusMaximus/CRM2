@@ -1,13 +1,13 @@
-
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, field_validator
-from datetime import datetime, date
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+import uuid
 
 from db import SessionLocal
-from models import Executor, ContractType, Client
+from models import Executor, ClientType, SampleContract, Client
 
 router = APIRouter(prefix="/api", tags=["crm"])
+
 
 def get_db():
     db = SessionLocal()
@@ -16,65 +16,67 @@ def get_db():
     finally:
         db.close()
 
-# OUT-схемы
 class ExecutorOut(BaseModel):
-    id: int
-    name_executor: str
-    class Config: from_attributes = True
+    class Config:
+        from_attributes = True
 
-class ContractTypeOut(BaseModel):
-    id: int
-    contract_type_name: str
-    class Config: from_attributes = True
 
-# IN и OUT для клиента
+class SampleContractOut(BaseModel):
+    id_sample_contract: str
+    name_sample_contract: str
+
+    class Config:
+        from_attributes = True
+
+
+class ClientTypeOut(BaseModel):
+    id_type_client: int
+    id_type_long: str
+
+    class Config:
+        from_attributes = True
+
 class ClientIn(BaseModel):
-    executor_id: int
-    contract_type_id: int
-    contract_date: str      # принимаем "dd.mm.yyyy" или ISO
-    contract_number: str
+    type_client: int
+    inn_client: str
+    ogrn_client: str
+    kpp_client: str | None = None
+    name_client: str
+    adress_client: str
+    bank_client: str
+    bik_bank_client: str
+    acc_bank_client: str
+    cor_bank_client: str
+    tel_client: str
+    mail_client: str
+    mess_client: str
+    contact_name_client: str
 
-    @field_validator("contract_date")
-    @classmethod
-    def normalize_date(cls, v: str) -> str:
-        try:
-            if "." in v:
-                d = datetime.strptime(v, "%d.%m.%Y").date()
-            else:
-                d = datetime.fromisoformat(v).date()
-            return d.isoformat()
-        except Exception:
-            raise ValueError("Неверный формат даты (используйте dd.mm.yyyy или yyyy-mm-dd)")
 
-class ClientOut(BaseModel):
-    id: int
-    executor_id: int
-    contract_type_id: int
-    contract_date: date
-    contract_number: str
-    class Config: from_attributes = True
+class ClientOut(ClientIn):
+    id_client: str
+
+    class Config:
+        from_attributes = True
+
 
 @router.get("/executors", response_model=list[ExecutorOut])
 def list_executors(db: Session = Depends(get_db)):
     return db.query(Executor).order_by(Executor.name_executor).all()
 
-@router.get("/contract-types", response_model=list[ContractTypeOut])
-def list_contract_types(db: Session = Depends(get_db)):
-    return db.query(ContractType).order_by(ContractType.contract_type_name).all()
+@router.get("/sample-contracts", response_model=list[SampleContractOut])
+def list_sample_contracts(db: Session = Depends(get_db)):
+    return db.query(SampleContract).order_by(SampleContract.name_sample_contract).all()
+
+
+@router.get("/client-types", response_model=list[ClientTypeOut])
+def list_client_types(db: Session = Depends(get_db)):
+    return db.query(ClientType).order_by(ClientType.id_type_long).all()
+
 
 @router.post("/clients", response_model=ClientOut, status_code=201)
 def create_client(payload: ClientIn, db: Session = Depends(get_db)):
-    if not db.get(Executor, payload.executor_id):
-        raise HTTPException(400, "Executor not found")
-    if not db.get(ContractType, payload.contract_type_id):
-        raise HTTPException(400, "Contract type not found")
-
-    client = Client(
-        executor_id=payload.executor_id,
-        contract_type_id=payload.contract_type_id,
-        contract_date=datetime.fromisoformat(payload.contract_date).date(),
-        contract_number=payload.contract_number,
-    )
+     client = Client(id_client=f"client{uuid.uuid4().hex}", **payload.model_dump())
     db.add(client)
     db.commit()
     db.refresh(client)
